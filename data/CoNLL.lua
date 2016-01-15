@@ -76,7 +76,7 @@ local function charToTensor(dataset)
       end)
   end)
 
-  return torch.ByteTensor(input), torch.ByteTensor(target)
+  return torch.IntTensor(input), torch.IntTensor(target)
 end
 
 function CoNLL:trainCharIterator()

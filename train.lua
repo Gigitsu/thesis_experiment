@@ -87,7 +87,7 @@ if opt.gpuid >= 0 then
 end -- end looking for a suitable gpu
 
 -- create the data loader class
-local data = loadstring('return datasets.'..opt.dataset..'()')()
+local data = loadstring('return datasets.'..opt.dataset..'('..tostring(opt.use_space)..')')()
 local loader = CoNLLoader(data, opt.batch_size, opt.seq_length)
 --print('vocab size: ' .. vocab_size)
 
