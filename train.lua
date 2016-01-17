@@ -94,11 +94,11 @@ local loader = CoNLLoader(data, opt.batch_size, opt.seq_length)
 local protos = {}
 
 -- create directory for the check points if does not exists
-if not opt.checkpoint_dir:sub(1, 1) then
+if opt.checkpoint_dir:sub(1, 1) ~= '/' then
   opt.checkpoint_dir = paths.concat(g2.SAVE_DIR, opt.dataset, opt.checkpoint_dir)
 end
 if not path.exists(opt.checkpoint_dir) then
-  lfs.mkdir(opt.checkpoint_dir)
+  paths.mkdir(opt.checkpoint_dir)
 end
 
 -- looking for candidate checkpoint file
@@ -344,7 +344,7 @@ for i = 1, iterations do
         local val_loss = eval_split(2) -- 2 = validation
         val_losses[i] = val_loss
 
-        local savefile = string.format('%s/lm_%s_epoch%.2f_%.4f.t7', opt.checkpoint_dir, opt.savefile, epoch, val_loss)
+        local savefile = string.format('%s/lm_%s_epoch%.2f_loss%.4f.t7', opt.checkpoint_dir, opt.savefile, epoch, val_loss)
         print('saving checkpoint to ' .. savefile)
         local checkpoint = {}
         checkpoint.train_losses = train_losses
