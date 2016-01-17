@@ -9,10 +9,12 @@ utf8 = require 'lua-utf8'
 -- luarocks luautf8
 
 g2 = {}
-g2.TORCH_DIR = os.getenv('TORCH_DATA_PATH') or os.getenv('HOME')
-
 -- torch.include('g2', 'utils/utils.lua')
 require 'utils/utils.lua'
+
+g2.TORCH_DIR = os.getenv('TORCH_DATA_PATH')
+  or paths.concat(os.getenv('HOME'), 'torch_data')
+g2.mkdir(g2.TORCH_DIR)
 
 --[[ directory structure ]]--
 g2.DATA_DIR = os.getenv('DEEP_DATA_PATH')
