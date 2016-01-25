@@ -2,16 +2,17 @@ require './init.lua'
 
 cmd = torch.CmdLine()
 cmd:text()
-cmd:text('Predict from a model')
+cmd:text('Classify data using a model')
 cmd:text()
 cmd:text('Options')
 -- required:
 cmd:argument('-model', 'model checkpoint to use for sampling')
 -- optional parameters
 cmd:option('-seed', 123, 'random number generator\'s seed')
-cmd:option('-sample', 1, '0 to use max at each timestep, 1 to sample at each timestep')
-cmd:option('-temperature', 1, 'temperature of sampling')
 cmd:option('-verbose', 1, 'set to 0 to ONLY print the sampled text, no diagnostics')
+-- GPU/CPU
+cmd:option('-gpuid', 0, 'which gpu to use. -1 = use CPU')
+cmd:option('-opencl', false, 'use OpenCL (instead of CUDA)')
 cmd:text()
 
 opt = cmd:parse(arg)
@@ -20,6 +21,11 @@ torch.manualSeed(opt.seed)
 
 if not lfs.attributes(opt.model, 'mode') then
   print('Error the file ' .. opt.model .. ' does not exists, \n specify a right model file')
+end
+
+-- gated print: simple utility function wrapping a print
+function gprint(str)
+    if opt.verbose == 1 then print(str) end
 end
 
 -- looking for a suitable gpu
@@ -61,9 +67,6 @@ merge(opt, checkpoint.opt)
 local protos = checkpoint.protos
 protos.rnn:evaluate()
 
--- init the translator
-local translator = _G[opt.loader..'Translator'](opt.dataDir)
-
 -- init the rnn state to all zeros
 print('Creating an LSTM')
 local current_state = {}
@@ -81,62 +84,55 @@ local state_size = #current_state
 
 local data = loadstring('return datasets.'..opt.dataset..'('..tostring(opt.use_space)..')')()
 local test_x, _ = data:testCharTensors()
+local test_size = test_x:size(1)
+
+local classes = {}
+local savefile = opt.model:sub(1, opt.model:len() - ( 1 + paths.extname(opt.model):len())) .. '_classification.'..paths.extname(opt.model)
+
+test_x:resize(test_size, 1)
 
 if opt.gpuid >= 0 then
   if opt.opencl then test_x = test_x:cl()
   else test_x = test_x:cuda() end
 end
 
-for i = 1, #test_x do
+io.write('Classifying data:  ')
+io.flush()
 
+local prev_percentage = -1
+
+local function test_percentage(i)
+  return math.floor(i * 100 / test_size);
 end
 
+for i = 1, test_size do
+  -- forward the rnn for next character
+  local lst = protos.rnn:forward{test_x[i], unpack(current_state)}
 
-local seed_text = opt.prime_text
-if string.len(seed_text) > 0 then
-  print('Seeding with text ' .. seed_text)
-  print('--------')
-  for c in seed_text:gmatch('.') do
-    prevChar = torch.Tensor{ translator.translate(c) }
-    io.write(translator.reversedTranslate(prevChar[1]))
-    if opt.gpuid >= 0 and opt.opencl == 0 then prevChar = prevChar:cuda() end
-    if opt.gpuid >= 0 and opt.opencl == 1 then prevChar = prevChar:cl() end
-    local lst = protos.rnn:forward{prevChar, unpack(current_state) }
-    -- lst is a list of [state1,state2,..stateN,output]. We want everything but last piece
-    current_state = {}
-    for i = 1,state_size do table.insert(current_state, lst[i]) end
-    prediction = lst[#lst]
-  end
-else
-  -- fill with uniform probabilities over characters
-  print('missing seed text, using uniform probability over first character')
-  print('--------------------------')
-  prediction = torch.Tensor(1, translator.size):fill(1)/(translator.size)
-  if opt.gpuid >= 0 and opt.opencl == 0 then prediction = prediction:cuda() end
-  if opt.gpuid >= 0 and opt.opencl == 1 then prediction = prediction:cl() end
-end
-
-for i = 1, opt.length do
-  --log probabilities from the previous timestep
-  if opt.sample == 0 then
-    -- user argmax
-    local _, _prevChar = prediction:max(2)
-    prevChar = _prevChar:resize(1)
-  else
-    -- se sampling
-    prediction:div(opt.temperature)
-    local probs = torch.exp(prediction):squeeze()
-    probs:div(torch.sum(probs)) -- renormalize so probs sum to one
-    prevChar = torch.multinomial(probs:float(), 1):resize(1):float()
-  end
-
-  -- forward the rnn for the next character
-  local lst = protos.rnn:forward{prevChar, unpack(current_state) }
   current_state = {}
-  for i = 1, state_size do table.insert(current_state, lst[i]) end
-  prediction = lst[#lst]
+  for i=1, state_size do
+    table.insert(current_state, lst[i])
+  end
+  table.insert(classes, lst[#lst])
 
-  io.write(translator.reversedTranslate(prevChar[1]))
+  local percentage = test_percentage(i)
+  if(percentage ~= prev_percentage) then
+    prev_percentage = percentage
+    if(percentage % 10 == 0) then
+      io.write(percentage..'%')
+    elseif(percentage % 2 == 0) then
+      io.write('.')
+    end
+    io.flush()
+  end
 end
+
 io.write('\n')
 io.flush()
+
+local to_save = {}
+to_save.classes = classes
+to_save.opt = opt
+
+torch.save(savefile, to_save)
+print('Classes saved to ' .. savefile)

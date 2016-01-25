@@ -343,3 +343,7 @@ function model_utils.clone_many_times(net, T)
   mem:close()
   return clones
 end
+
+function merge(t1, t2)
+  for k,v in pairs(t2) do t1[k] = v end
+end
