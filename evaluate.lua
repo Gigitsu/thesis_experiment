@@ -9,7 +9,6 @@ cmd:text('Options')
 cmd:argument('-model', 'model checkpoint to use for sampling')
 -- optional parameters
 cmd:option('-seed', 123, 'random number generator\'s seed')
-cmd:option('-verbose', 1, 'set to 0 to ONLY print the sampled text, no diagnostics')
 -- GPU/CPU
 cmd:option('-gpuid', 0, 'which gpu to use. -1 = use CPU')
 cmd:option('-opencl', false, 'use OpenCL (instead of CUDA)')
@@ -21,11 +20,6 @@ torch.manualSeed(opt.seed)
 
 if not lfs.attributes(opt.model, 'mode') then
   print('Error the file ' .. opt.model .. ' does not exists, \n specify a right model file')
-end
-
--- gated print: simple utility function wrapping a print
-function gprint(str)
-    if opt.verbose == 1 then print(str) end
 end
 
 -- looking for a suitable gpu
@@ -86,8 +80,7 @@ local data = loadstring('return datasets.'..opt.dataset..'('..tostring(opt.use_s
 local test_x, _ = data:testCharTensors()
 local test_size = test_x:size(1)
 
-local output = {}
-local savefile = opt.model:sub(1, opt.model:len() - ( 1 + paths.extname(opt.model):len())) .. '_classification.'..paths.extname(opt.model)
+local outputs = {}
 
 test_x:resize(test_size, 1)
 
@@ -113,7 +106,7 @@ for i = 1, test_size do
   for j=1, state_size do
     table.insert(current_state, lst[j])
   end
-  table.insert(output, lst[#lst]:clone():double())
+  table.insert(outputs, lst[#lst]:clone():double())
 
   local percentage = test_percentage(i)
   if(percentage ~= prev_percentage) then
@@ -131,8 +124,9 @@ io.write('\n')
 io.flush()
 
 local to_save = {}
-to_save.output = output
+to_save.outputs = outputs
 to_save.opt = opt
 
+local savefile = opt.model:sub(1, opt.model:len() - ( 1 + paths.extname(opt.model):len())) .. '_evaluation.'..paths.extname(opt.model)
 torch.save(savefile, to_save)
-print('Classes saved to ' .. savefile)
+print('Evaluation saved to ' .. savefile)
