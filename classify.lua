@@ -86,7 +86,7 @@ local data = loadstring('return datasets.'..opt.dataset..'('..tostring(opt.use_s
 local test_x, _ = data:testCharTensors()
 local test_size = test_x:size(1)
 
-local classes = {}
+local output = {}
 local savefile = opt.model:sub(1, opt.model:len() - ( 1 + paths.extname(opt.model):len())) .. '_classification.'..paths.extname(opt.model)
 
 test_x:resize(test_size, 1)
@@ -110,10 +110,10 @@ for i = 1, test_size do
   local lst = protos.rnn:forward{test_x[i], unpack(current_state)}
 
   current_state = {}
-  for i=1, state_size do
-    table.insert(current_state, lst[i])
+  for j=1, state_size do
+    table.insert(current_state, lst[j])
   end
-  table.insert(classes, lst[#lst])
+  table.insert(output, lst[#lst]:clone():double())
 
   local percentage = test_percentage(i)
   if(percentage ~= prev_percentage) then
@@ -131,7 +131,7 @@ io.write('\n')
 io.flush()
 
 local to_save = {}
-to_save.classes = classes
+to_save.output = output
 to_save.opt = opt
 
 torch.save(savefile, to_save)
