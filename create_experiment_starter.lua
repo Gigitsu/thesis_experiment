@@ -24,6 +24,14 @@ local node_iterator = function(max)
   end
 end
 
+local get_spaces = function(actual, max)
+  if (#tostring(actual) < #tostring(max)) then
+    return ' '
+  else
+    return ''
+  end
+end
+
 local datasets    = {'English2000', 'Evalita'}
 
 local commands = ''
@@ -34,11 +42,11 @@ for _, d in pairs(datasets) do
     for n in node_iterator(opt.max_nodes) do
       for s = opt.min_seq_lengths, opt.max_seq_lengths, opt.seq_length_step do
         commands = commands .. 'th train.lua'..
-          ' -layers_number '..l..
-          ' -layer_size '..n..
-          ' -seq_length '..s..
-          ' -checkpoint_dir cp_'..n..'h_'..l..'l_'..s..'s'..
-          ' -dataset '..d..'\n'
+          ' -dataset '..d..
+          ' -layers_number '..get_spaces(l, opt.max_layers)..l..
+          ' -layer_size '..get_spaces(n, opt.max_nodes)..n..
+          ' -seq_length '..get_spaces(s, opt.max_seq_lengths)..s..
+          ' -checkpoint_dir cp_'..n..'h_'..l..'l_'..s..'s\n'
         if(opt.use_space) then
           commands = commands ..
             'th train.lua -use_space -seq_length '..s..' -layer_size '..n..' -layers_number '..l..' -checkpoint_dir cp_'..n..'h_'..l..'l_'..s..'s_ws -dataset '..d..'\n'
