@@ -1,2 +1,3 @@
 experiment_starter.sh
+torch_data/*
 *.t7

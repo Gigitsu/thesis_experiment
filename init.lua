@@ -13,7 +13,7 @@ g2 = {}
 require 'utils/utils.lua'
 
 g2.TORCH_DIR = os.getenv('TORCH_DATA_PATH')
-  or paths.concat(os.getenv('HOME'), 'torch_data')
+  or './torch_data'
 g2.mkdir(g2.TORCH_DIR)
 
 --[[ directory structure ]]--
