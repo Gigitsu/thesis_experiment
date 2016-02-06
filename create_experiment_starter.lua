@@ -4,7 +4,7 @@ cmd:text('Creates a shell script to start the experiment')
 cmd:text()
 cmd:text('Options')
 -- data
-cmd:option('-use_space', false, 'True to train with space too.')
+cmd:option('-use_space', true, 'True to train with space too.')
 
 cmd:option('-min_nodes',  128, 'The min number of node to use.')
 cmd:option('-max_nodes', 1024, 'The max number of node to use.')
