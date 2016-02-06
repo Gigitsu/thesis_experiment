@@ -6,6 +6,7 @@ cmd:text('Options')
 -- data
 cmd:option('-use_space', false, 'True to train with space too.')
 
+cmd:option('-min_nodes',  128, 'The min number of node to use.')
 cmd:option('-max_nodes', 1024, 'The max number of node to use.')
 cmd:option('-max_layers', 5, 'The max number of layers to use')
 
@@ -18,7 +19,7 @@ cmd:text()
 opt = cmd:parse(arg)
 
 local node_iterator = function(max)
-  local node = 64
+  local node = opt.min_nodes/2
   return function()
     node = node * 2
     if(node <= max) then return node end
