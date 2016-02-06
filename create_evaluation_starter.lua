@@ -14,17 +14,28 @@ opt = cmd:parse(arg)
 local models = {}
 local evaluations = {}
 
+local stringx = require('pl.stringx')
+
 for ds in g2.dirs(g2.SAVE_DIR) do
   for cp in g2.dirs(ds) do
-    local min_loss, min_path = 100, ''
+    local min_loss, min_path  = 100, ''
+    local max_epoch, max_path =   0, ''
     for t7 in g2.files(cp, '.t7') do
-      local loss = tonumber(t7:sub(#t7-8, #t7-3))
+      local lidx = stringx.lfind(t7, 'loss') + 4
+      local eidx = stringx.lfind(t7, 'epoch') + 5
+      local loss = tonumber(t7:sub(lidx, lidx+5))
+      local epoch = tonumber(t7:sub(eidx, lidx-6))
       if(loss and loss < min_loss) then
         min_loss = loss
         min_path = path.join(cp, t7)
       end
+      if(epoch and epoch > max_epoch) then
+        max_epoch = epoch
+        max_path = path.join(cp, t7)
+      end
     end
     table.insert(models, min_path)
+    table.insert(models, max_path)
   end
 end
 
