@@ -79,12 +79,12 @@ for i=1, test_size do
     local probs = torch.exp(outputs[i])
     probs:div(torch.sum(probs)) -- renormalize so probs sums to one
     char_max_outputs =
-      torch.multinomial(probs:float(), opt.evaluation_number):resize(opt.evaluation_number):float()
+      torch.multinomial(probs:float(), opt.output_number):resize(opt.output_number):float()
   else
-    char_max_outputs = torch.FloatTensor(opt.evaluation_number)
+    char_max_outputs = torch.FloatTensor(opt.output_number)
     local min = outputs[i]:min()
 
-    for j=1, opt.evaluation_number do
+    for j=1, opt.output_number do
       local _, max_index = outputs[i]:max(2)
       char_max_outputs[j] = max_index:resize(1)
       outputs[i][1][char_max_outputs[j]] = min
@@ -100,6 +100,7 @@ to_save.confusion_matrix = conf
 to_save.classes = test_computed_y
 to_save.opt = opt
 
-local savefile = opt.model:sub(1, opt.model:len() - ( 12 + paths.extname(opt.model):len())) .. '_classification_using_'..opt.evaluation_number..'_outputs_.'..paths.extname(opt.model)
+local savefile = opt.evaluation:sub(1, opt.evaluation:len() - ( 12 + paths.extname(opt.evaluation):len())) .. '_classification_using_'..opt.output_number..'_outputs.'..paths.extname(opt.evaluation)
+print(opt.model)
 torch.save(savefile, to_save)
 print('Classes saved to ' .. savefile)

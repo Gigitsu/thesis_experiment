@@ -124,13 +124,28 @@ function g2.getExt(file)
   return string.reverse(rev:sub(1,len))
 end
 
+function g2.dirs(dir)
+ local iter, dirObj = lfs.dir(dir)
+ local stringx = require('pl.stringx')
+ return function()
+   local item = iter(dirObj)
+   while item do
+     if(not stringx.startswith(item, '.')) then
+       return path.join(dir, item)
+     else
+       item = iter(dirObj)
+     end
+   end
+ end
+end
+
 function g2.files(dir, ext)
   local iter, dirObj = lfs.dir(dir)
   return function() -- iterator function
     local item = iter(dirObj)
     while item do
       if lfs.attributes(path.join(dir, item)).mode == "file" then -- is file
-        if ext == nil or ext == lfs.getExt(item) then
+        if ext == nil or ext == g2.getExt(item) then
           return item
         end
       end

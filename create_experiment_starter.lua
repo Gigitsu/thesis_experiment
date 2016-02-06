@@ -13,7 +13,7 @@ cmd:option('-min_seq_lengths', 60, 'The min value of sequence length to use')
 cmd:option('-max_seq_lengths', 100, 'The max value of sequence length to use')
 cmd:option('-seq_length_step', 20, 'The step value to use for increment sequence length')
 cmd:option('-max_epochs', 50, 'The max number of full passes through the training data')
-
+cmd:text()
 
 opt = cmd:parse(arg)
 
