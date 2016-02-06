@@ -44,7 +44,7 @@ All input data is stored inside the `torch_data/data` directory. You'll notice t
 
 All the checkpoints are stored in `torch_data/save` directory.
 
-**Evalita**: In order to use the evalita dataset, you need to download the [evalita.tar.gz]('https://www.dropbox.com/s/v521hxr43r7qmvc/evalita.tar.gz?dl=0') archive and unpack it in `torch_data/data/CoNLL` directory. At the end you should have `devel` and `train` files in `torch_data/data/CoNLL/Evalita`.
+**Evalita**: In order to use the evalita dataset, you need to download the [evalita.tar.gz](https://www.dropbox.com/s/v521hxr43r7qmvc/evalita.tar.gz?dl=0) archive and unpack it in `torch_data/data/CoNLL` directory. At the end you should have `devel` and `train` files in `torch_data/data/CoNLL/Evalita`.
 
 With
 ```bash
