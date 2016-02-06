@@ -176,7 +176,7 @@ function CoNLL.encode(dataset, word_column, tag_column, with_space)
   -- add space in char vocabulary
   if with_space then
     charVocabulary[' '] = true
-    perCharTagVocabulary[' '] = true
+    perCharTagVocabulary['S'] = true
   end
 
   tablex.foreach(dataset, function(sentence) -- start iterate through sentences
@@ -194,8 +194,8 @@ function CoNLL.encode(dataset, word_column, tag_column, with_space)
         charVocabulary[c] = true
       end
       perCharTagVocabulary[tag .. '-S'] = true
-      if utf8.len(word) > 1 then perCharTagVocabulary[tag..'-E'] = true end
-      if utf8.len(word) > 2  then perCharTagVocabulary[tag..'-I'] = true end
+      if utf8.len(word) > 1 then perCharTagVocabulary[tag..'-I'] = true end
+      --if utf8.len(word) > 2  then perCharTagVocabulary[tag..'-I'] = true end
 
     end) -- end iterate through words
   end) -- end iterate through sentences
@@ -233,10 +233,10 @@ function CoNLL.encode(dataset, word_column, tag_column, with_space)
         table.insert(encodedCharsTags, perCharTagVocabulary[tag..'-I'])
       end
       encodedCharsTags[1] = perCharTagVocabulary[tag..'-S']
-      if utf8.len(word) > 1 then encodedCharsTags[utf8.len(word)] = perCharTagVocabulary[tag..'-E'] end
+      --if utf8.len(word) > 1 then encodedCharsTags[utf8.len(word)] = perCharTagVocabulary[tag..'-E'] end
       if with_space then
         table.insert(encodedChars, charVocabulary[' '])
-        table.insert(encodedCharsTags, perCharTagVocabulary[' '])
+        table.insert(encodedCharsTags, perCharTagVocabulary['S'])
       end
 
       -- replace original sentence word with an encoded one
