@@ -8,6 +8,11 @@ local c_dataset, c_tag_vocabulary, c_word_vocabulary, c_char_vocabulary, c_per_c
 
 local CoNLL = torch.class('CoNLL')
 
+CoNLL.c_word = c_word
+CoNLL.c_word_tag = c_word_tag
+CoNLL.c_chars = c_chars
+CoNLL.c_chars_tags = c_chars_tags
+
 function CoNLL:__init(data, splits, word_column, tag_column, column_separator, with_space)
   local tablex = require('pl.tablex')
 
@@ -18,7 +23,9 @@ function CoNLL:__init(data, splits, word_column, tag_column, column_separator, w
 
   if not g2.isTable then data = {data} end
 
-  print('Parsing data files...')
+  io.write('Parsing data files...')
+  io.flush()
+  
   local ds = CoNLL.encode(CoNLL.readFiles(data, column_separator), word_column, tag_column, with_space)
 
   local split_sizes = {#ds.dataset, 0, 0}
@@ -36,6 +43,8 @@ function CoNLL:__init(data, splits, word_column, tag_column, column_separator, w
   self.train_data = tablex.sub(ds[c_dataset], 0, split_sizes[1])
   self.test_data = tablex.sub(ds[c_dataset], split_sizes[1] + 1, split_sizes[1] + split_sizes[2])
   self.dev_data = tablex.sub(ds[c_dataset], split_sizes[1] + split_sizes[2] + 1, split_sizes[1] + split_sizes[2] + split_sizes[3])
+
+  print("done")
 end
 
 local function charIterator(dataset)
