@@ -1,3 +1,5 @@
+require('fs')
+
 cmd = torch.CmdLine()
 cmd:text()
 cmd:text('Creates a shell script to start the experiment')
@@ -36,10 +38,12 @@ end
 
 local datasets    = {'English2000', 'Evalita'}
 
+local base_filename = './start_experiment_'
+local file = require("pl.file")
 local commands = ''
 
 for _, d in pairs(datasets) do
-  commands = commands .. '#Train '..d..' dataset with different nodes and layers\n'
+  --commands = commands .. '#Train '..d..' dataset with different nodes and layers\n'
   for l = 2, opt.max_layers do
     for n in node_iterator(opt.max_nodes) do
       for s = opt.min_seq_lengths, opt.max_seq_lengths, opt.seq_length_step do
@@ -61,15 +65,13 @@ for _, d in pairs(datasets) do
         end
       end
     end
+    local filename =  base_filename..d..'_'..l..'l.sh'
+    file.write(filename, commands)
+    fs.chmod(filename, 755)
+    commands = ''
   end
-  commands = commands .. '\n'
+  --commands = commands .. '\n'
 end
 
-local filename = './experiment_starter.sh'
-local file = require("pl.file")
-file.write(filename, commands)
 
-require('fs')
-fs.chmod(filename, 755)
-
-print('Experiment starter script created successfully')
+print('Experiment starter scripts created successfully')
