@@ -31,7 +31,7 @@ function datasets.English2000(with_space)
 
   return CoNLL(
     {paths.concat(path, 'train.txt'), paths.concat(path, 'test.txt')},
-    {0.93, 0.05, 0.02},
+    {0.9, 0.1},
     1, 2,
     ' ',
     with_space
@@ -88,7 +88,7 @@ function datasets.Evalita(with_space)
 
   return CoNLL(
     {paths.concat(base, 'train'), paths.concat(base, 'devel')},
-    {0.93, 0.05, 0.02},
+    {0.9, 0.1},
     1, 2,
     '\t',
     with_space

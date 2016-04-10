@@ -17,7 +17,7 @@ function CoNLL:__init(data, splits, word_column, tag_column, column_separator, w
   local tablex = require('pl.tablex')
 
   local with_space = with_space or false
-  local splits = splits or {0.93, 0.5, 0.2}
+  local splits = splits or {0.90, 0.1}
   local column_separator = column_separator or '\t'
 
 
@@ -25,24 +25,28 @@ function CoNLL:__init(data, splits, word_column, tag_column, column_separator, w
 
   io.write('Parsing data files...')
   io.flush()
-  
-  local ds = CoNLL.encode(CoNLL.readFiles(data, column_separator), word_column, tag_column, with_space)
 
-  local split_sizes = {#ds.dataset, 0, 0}
+  local vocabularies = CoNLL.makeVocabularies(CoNLL.readFiles(data, column_separator), word_column, tag_column, with_space)
+
+  local new_train = CoNLL.encode(CoNLL.readFiles({data[1]}, column_separator), word_column, tag_column, with_space, vocabularies)
+  local new_test = CoNLL.encode(CoNLL.readFiles({data[2]}, column_separator), word_column, tag_column, with_space, vocabularies)
+
+  local split_sizes = {#new_train, 0}
 
   for i=1,#splits do
-    split_sizes[i] = torch.round(#ds.dataset * splits[i])
+    split_sizes[i] = torch.round(#new_train * splits[i])
   end
 
-  self.word_vocabulary = ds[c_word_vocabulary]
-  self.tag_vocabulary = ds[c_tag_vocabulary]
+  self.word_vocabulary = vocabularies[c_word_vocabulary]
+  self.tag_vocabulary = vocabularies[c_tag_vocabulary]
 
-  self.char_vocabulary = ds[c_char_vocabulary]
-  self.per_char_tag_vocabulary = ds[c_per_char_tag_vocabulary]
+  self.char_vocabulary = vocabularies[c_char_vocabulary]
+  self.per_char_tag_vocabulary = vocabularies[c_per_char_tag_vocabulary]
 
-  self.train_data = tablex.sub(ds[c_dataset], 0, split_sizes[1])
-  self.test_data = tablex.sub(ds[c_dataset], split_sizes[1] + 1, split_sizes[1] + split_sizes[2])
-  self.dev_data = tablex.sub(ds[c_dataset], split_sizes[1] + split_sizes[2] + 1, split_sizes[1] + split_sizes[2] + split_sizes[3])
+  self.train_data = tablex.sub(new_train, 0, split_sizes[1])
+  self.dev_data = tablex.sub(new_train, split_sizes[1] + 1, split_sizes[1] + split_sizes[2])
+
+  self.test_data = new_test
 
   print("done")
 end
@@ -170,11 +174,7 @@ function CoNLL.makeString(tbl)
   return tablex.reduce(makeCorpus, tbl)
 end
 
--- Creates a dataset, along with a vocabulary.
--- This function takes 2 argumenst:
---   @word_column: the column index where the word is stored
---   @tag_column: the column index where the tag is stored
-function CoNLL.encode(dataset, word_column, tag_column, with_space)
+function CoNLL.makeVocabularies(dataset, word_column, tag_column, with_space)
   local tablex = require('pl.tablex')
 
   -- start generating vocabulary
@@ -225,6 +225,24 @@ function CoNLL.encode(dataset, word_column, tag_column, with_space)
 
   -- end generating vocabulary
 
+  return {
+    [c_tag_vocabulary] = tagVocabulary,
+    [c_word_vocabulary] = wordVocabulary,
+    [c_char_vocabulary] = charVocabulary,
+    [c_per_char_tag_vocabulary] = perCharTagVocabulary
+  }
+end
+
+-- Creates a dataset, along with a vocabulary.
+-- This function takes 2 argumenst:
+--   @word_column: the column index where the word is stored
+--   @tag_column: the column index where the tag is stored
+function CoNLL.encode(dataset, word_column, tag_column, with_space, vocabularies)
+  local tablex = require('pl.tablex')
+
+  local wordVocabulary, tagVocabulary = vocabularies[c_word_vocabulary], vocabularies[c_tag_vocabulary] -- for word based encoding
+  local charVocabulary, perCharTagVocabulary = vocabularies[c_char_vocabulary], vocabularies[c_per_char_tag_vocabulary] -- for char based encoding
+
   -- start encoding dataset
 
   tablex.foreach(dataset, function(sentence) -- start iterate through sentences
@@ -258,13 +276,7 @@ function CoNLL.encode(dataset, word_column, tag_column, with_space)
 
   -- end encoding dataset
 
-  return {
-    [c_dataset] = dataset,
-    [c_tag_vocabulary] = tagVocabulary,
-    [c_word_vocabulary] = wordVocabulary,
-    [c_char_vocabulary] = charVocabulary,
-    [c_per_char_tag_vocabulary] = perCharTagVocabulary
-  }
+  return dataset
 end
 
 function CoNLL.decode(dataset, wordVocabulary, tagVocabulary)
